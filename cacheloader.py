@@ -1,18 +1,3 @@
-"""
-lab42_cache_loader.py — build the shared temperature cache.
-
-Fetches every room's full-history temperature data (6-hour resolution) from the
-BMS and writes it to lab42_temp_cache.sqlite. The server programs then read that
-file and serve instantly, never touching the BMS.
-
-Run this before testing (and again whenever you want fresh data):
-
-    python lab42_cache_loader.py            # resume: fetch only what's missing
-    python lab42_cache_loader.py --fresh    # wipe and refetch everything
-
-IMPORTANT: the grid constants below (DATA_START_MS, DATA_END_MS) must match the
-servers, or the cache is considered stale and cleared. They already do.
-"""
 import sys
 import time
 import threading
@@ -32,7 +17,7 @@ PASSWORD      = "marnixq1w2e3r4"
 DATA_START_MS = 1658016000000
 DATA_END_MS   = 1781049600000
 SIXH_MS       = 6 * 3600 * 1000
-CHUNK_Q6H     = 256            # cells per request; 256 = best measured throughput
+CHUNK_Q6H     = 256
 FETCH_WORKERS = 48
 TEMP_KEY      = "temperature"
 CACHE_PATH    = "lab42_temp_cache.sqlite"
@@ -84,7 +69,7 @@ def fetch_binned(room_id, start_ms, end_ms, n_bins):
     hdr = {"Authorization": f"Bearer {TOKEN}"}
     r = SESSION.get(f"{BASE_URL}/rooms/{room_id}/data", params=params,
                     headers=hdr, timeout=REQUEST_TIMEOUT)
-    if r.status_code == 401:                      # token expired -> refresh once
+    if r.status_code == 401:
         with _tok_lock:
             TOKEN = get_token()
         hdr = {"Authorization": f"Bearer {TOKEN}"}
